@@ -8,12 +8,14 @@ import { slowQueries } from './slow-queries.js';
 import { timeConsuming } from './time-consuming.js';
 import { highFrequency } from './high-frequency.js';
 import { excessiveRows } from './excessive-rows.js';
+import { lockContention } from './lock-contention.js';
 
 const alwaysAnalyzers = [
 	{ name: 'cache-hit-ratio', fn: cacheHitRatio },
 	{ name: 'dead-tuples', fn: deadTuples },
 	{ name: 'sequential-scans', fn: sequentialScans },
-	{ name: 'unused-indexes', fn: unusedIndexes }
+	{ name: 'unused-indexes', fn: unusedIndexes },
+	{ name: 'lock-contention', fn: lockContention }
 ];
 
 const pgStatStatementsAnalyzers = [

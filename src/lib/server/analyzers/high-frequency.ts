@@ -21,6 +21,7 @@ export const highFrequency: Analyzer = async (client) => {
 
 	for (const row of result.rows) {
 		const calls = parseInt(row.calls);
+		const meanMs = parseFloat(row.mean_exec_time);
 		const statsReset = row.stats_reset ? new Date(row.stats_reset) : null;
 		if (!statsReset) continue;
 
@@ -28,15 +29,19 @@ export const highFrequency: Analyzer = async (client) => {
 		if (minutesSinceReset < 1) continue;
 
 		const callsPerMinute = calls / minutesSinceReset;
+		// DB time consumed per minute by this query (ms/min)
+		const dbTimePerMinute = callsPerMinute * meanMs;
 
-		if (callsPerMinute > 100) {
+		// Only flag if the query actually consumes meaningful DB time.
+		// A fast query running often is fine — a slow query running often is not.
+		if (callsPerMinute > 100 && dbTimePerMinute > 1000) {
 			findings.push({
 				analyzer: 'high-frequency',
-				severity: callsPerMinute > 1000 ? 'critical' : 'warning',
-				title: `High-frequency query (${callsPerMinute.toFixed(0)} calls/min)`,
-				description: `This query runs ${callsPerMinute.toFixed(0)} times per minute (${calls} total calls). Mean execution: ${parseFloat(row.mean_exec_time).toFixed(1)}ms.`,
-				suggestion: 'Consider caching results, batching calls, or using connection pooling to reduce query frequency.',
-				metadata: { query: row.query, calls, calls_per_minute: callsPerMinute, mean_exec_time: parseFloat(row.mean_exec_time) }
+				severity: dbTimePerMinute > 10000 ? 'critical' : 'warning',
+				title: `High-frequency query (${callsPerMinute.toFixed(0)} calls/min, ${(dbTimePerMinute / 1000).toFixed(1)}s DB time/min)`,
+				description: `This query runs ${callsPerMinute.toFixed(0)} times per minute at ${meanMs.toFixed(1)}ms avg, consuming ${(dbTimePerMinute / 1000).toFixed(1)}s of DB time per minute.`,
+				suggestion: 'Consider caching results, batching calls, or optimizing the query to reduce per-call execution time.',
+				metadata: { query: row.query, calls, calls_per_minute: callsPerMinute, mean_exec_time: meanMs, db_time_per_minute_ms: dbTimePerMinute }
 			});
 		}
 	}

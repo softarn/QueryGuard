@@ -12,7 +12,7 @@ export const sequentialScans: Analyzer = async (client) => {
 			n_live_tup
 		FROM pg_stat_user_tables
 		WHERE seq_scan > 0
-			AND n_live_tup > 500
+			AND n_live_tup > 10000
 		ORDER BY seq_tup_read DESC
 	`);
 
