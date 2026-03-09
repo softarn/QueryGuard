@@ -1,6 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
-export const deadTuples: Analyzer = async (client) => {
+const deadTuples: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT
 			schemaname,
@@ -57,3 +57,5 @@ export const deadTuples: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { deadTuples };

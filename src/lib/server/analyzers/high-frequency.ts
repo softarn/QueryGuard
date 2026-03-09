@@ -1,6 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
-export const highFrequency: Analyzer = async (client) => {
+const highFrequency: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT
 			query,
@@ -48,3 +48,5 @@ export const highFrequency: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { highFrequency };

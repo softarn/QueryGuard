@@ -1,6 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
-export const timeConsuming: Analyzer = async (client) => {
+const timeConsuming: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT
 			query,
@@ -34,3 +34,5 @@ export const timeConsuming: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { timeConsuming };

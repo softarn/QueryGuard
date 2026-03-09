@@ -1,6 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
-export const cacheHitRatio: Analyzer = async (client) => {
+const cacheHitRatio: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT
 			datname,
@@ -43,3 +43,5 @@ export const cacheHitRatio: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { cacheHitRatio };

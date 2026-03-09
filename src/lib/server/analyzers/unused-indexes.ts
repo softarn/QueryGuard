@@ -1,20 +1,26 @@
+import type pg from 'pg';
 import type { Analyzer, Finding } from './types.js';
 
-export const unusedIndexes: Analyzer = async (client) => {
-	// Skip if stats were reset recently — zero scans doesn't mean unused
-	const resetResult = await client.query(`
+async function daysSinceStatsReset(client: pg.Client): Promise<number | undefined> {
+	const result = await client.query(`
 		SELECT stats_reset FROM pg_stat_database WHERE datname = current_database()
 	`);
-	const statsReset = resetResult.rows[0]?.stats_reset ? new Date(resetResult.rows[0].stats_reset) : null;
-	const daysSinceReset = statsReset ? (Date.now() - statsReset.getTime()) / (1000 * 60 * 60 * 24) : null;
 
-	if (daysSinceReset !== null && daysSinceReset < 7) {
-		return [{
-			analyzer: 'unused-indexes',
-			severity: 'info',
-			title: 'Stats too recent for unused index detection',
-			description: `Database stats were reset ${daysSinceReset.toFixed(1)} days ago. Need at least 7 days of data to reliably detect unused indexes.`
-		}];
+	const statsReset = result.rows[0]?.stats_reset;
+	if (!statsReset) return undefined;
+
+	return (Date.now() - new Date(statsReset).getTime()) / (1000 * 60 * 60 * 24);
+}
+
+const unusedIndexes: Analyzer = async (client) => {
+	const days = await daysSinceStatsReset(client);
+
+	if (days == undefined) {
+		return [];
+	}
+
+	if (days < 30) {
+		return [];
 	}
 
 	const result = await client.query(`
@@ -58,3 +64,5 @@ export const unusedIndexes: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { unusedIndexes };

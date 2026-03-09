@@ -1,6 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
-export const excessiveRows: Analyzer = async (client) => {
+const excessiveRows: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT
 			query,
@@ -43,3 +43,5 @@ export const excessiveRows: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { excessiveRows };

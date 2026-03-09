@@ -1,6 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
-export const sequentialScans: Analyzer = async (client) => {
+const sequentialScans: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT
 			schemaname,
@@ -46,3 +46,5 @@ export const sequentialScans: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { sequentialScans };

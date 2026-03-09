@@ -1,6 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
-export const lockContention: Analyzer = async (client) => {
+const lockContention: Analyzer = async (client) => {
 	// Find queries currently blocked by locks
 	const blockedResult = await client.query(`
 		SELECT
@@ -56,19 +56,6 @@ export const lockContention: Analyzer = async (client) => {
 		});
 	}
 
-	// Check for tables with historically high lock waits
-	const lockWaitResult = await client.query(`
-		SELECT
-			schemaname,
-			relname,
-			n_live_tup,
-			COALESCE(n_dead_tup, 0) AS n_dead_tup,
-			COALESCE(seq_scan, 0) + COALESCE(idx_scan, 0) AS total_scans
-		FROM pg_stat_user_tables
-		WHERE COALESCE(seq_scan, 0) + COALESCE(idx_scan, 0) > 0
-		ORDER BY COALESCE(seq_scan, 0) + COALESCE(idx_scan, 0) DESC
-	`);
-
 	// Check for long-running transactions that may hold locks
 	const longTxResult = await client.query(`
 		SELECT
@@ -104,3 +91,5 @@ export const lockContention: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { lockContention };

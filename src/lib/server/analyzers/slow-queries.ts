@@ -1,6 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
-export const slowQueries: Analyzer = async (client) => {
+const slowQueries: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT
 			query,
@@ -50,3 +50,5 @@ export const slowQueries: Analyzer = async (client) => {
 
 	return findings;
 };
+
+export { slowQueries };
