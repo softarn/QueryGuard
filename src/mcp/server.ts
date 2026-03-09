@@ -3,22 +3,20 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import { connectTarget } from '../standalone/connection.js';
-import { runAnalysis } from '../lib/server/analyzers/index.js';
-import type { AnalysisResult } from '../lib/server/analyzers/index.js';
-import type { Severity } from '../lib/server/analyzers/types.js';
+import { runAnalysis } from '../lib/server/analyzers';
+import type { AnalysisResult } from '../lib/server/analyzers';
 
 const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
 const PORT = parseInt(process.env.PORT ?? '3001');
 
 let cachedResult: AnalysisResult | null = null;
 
-function createMcpServer() {
-	const server = new McpServer({
-		name: 'queryguard',
-		version: '1.0.0'
-	});
+const mcpServer = new McpServer({
+	name: 'queryguard',
+	version: '1.0.0'
+});
 
-	server.registerTool(
+mcpServer.registerTool(
 		'analyze_database',
 		{
 			description: 'Run all QueryGuard analyzers against the connected Postgres database. Returns findings about performance issues like slow queries, missing indexes, dead tuples, and more.',
@@ -37,7 +35,7 @@ function createMcpServer() {
 		}
 	);
 
-	server.registerTool(
+	mcpServer.registerTool(
 		'get_findings',
 		{
 			description: 'Filter cached findings from the last analyze_database run by severity and/or analyzer name.',
@@ -68,7 +66,7 @@ function createMcpServer() {
 		}
 	);
 
-	server.registerTool(
+	mcpServer.registerTool(
 		'explain_query',
 		{
 			description: 'Run EXPLAIN (FORMAT JSON) on a SQL query to show the execution plan. Read-only — the query is not executed.',
@@ -90,9 +88,6 @@ function createMcpServer() {
 		}
 	);
 
-	return server;
-}
-
 const httpServer = createServer(async (req, res) => {
 	if (AUTH_TOKEN && req.headers.authorization !== `Bearer ${AUTH_TOKEN}`) {
 		res.writeHead(401, { 'Content-Type': 'application/json' });
@@ -103,9 +98,8 @@ const httpServer = createServer(async (req, res) => {
 	const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
 
 	if (url.pathname === '/mcp') {
-		const server = createMcpServer();
 		const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-		await server.connect(transport);
+		await mcpServer.connect(transport);
 		await transport.handleRequest(req, res);
 	} else if (url.pathname === '/health') {
 		res.writeHead(200, { 'Content-Type': 'application/json' });
