@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import type { Finding } from './types.js';
+import type { DatabaseContext, Finding } from './types.js';
 import { cacheHitRatio } from './cache-hit-ratio.js';
 import { deadTuples } from './dead-tuples.js';
 import { sequentialScans } from './sequential-scans.js';
@@ -36,18 +36,75 @@ async function hasPgStatStatements(client: pg.Client): Promise<boolean> {
 	}
 }
 
+async function collectDatabaseContext(client: pg.Client): Promise<DatabaseContext> {
+	const dbSizeResult = await client.query(
+		`SELECT pg_size_pretty(pg_database_size(current_database())) AS size`
+	);
+
+	const tablesResult = await client.query(`
+		SELECT
+			schemaname AS schema,
+			relname AS name,
+			n_live_tup AS estimated_rows,
+			pg_size_pretty(pg_total_relation_size(relid)) AS total_size,
+			pg_size_pretty(pg_table_size(relid)) AS table_size,
+			pg_size_pretty(pg_indexes_size(relid)) AS index_size
+		FROM pg_stat_user_tables
+		ORDER BY pg_total_relation_size(relid) DESC
+	`);
+
+	const indexesResult = await client.query(`
+		SELECT
+			s.schemaname AS schema,
+			s.relname AS table,
+			s.indexrelname AS index,
+			pg_size_pretty(pg_relation_size(s.indexrelid)) AS size,
+			s.idx_scan AS scans,
+			ix.indisunique AS is_unique,
+			ix.indisprimary AS is_primary
+		FROM pg_stat_user_indexes s
+		JOIN pg_index ix ON s.indexrelid = ix.indexrelid
+		ORDER BY pg_relation_size(s.indexrelid) DESC
+	`);
+
+	return {
+		database_size: dbSizeResult.rows[0].size,
+		tables: tablesResult.rows.map((r) => ({
+			schema: r.schema,
+			name: r.name,
+			estimated_rows: parseInt(r.estimated_rows),
+			total_size: r.total_size,
+			table_size: r.table_size,
+			index_size: r.index_size
+		})),
+		indexes: indexesResult.rows.map((r) => ({
+			schema: r.schema,
+			table: r.table,
+			index: r.index,
+			size: r.size,
+			scans: parseInt(r.scans),
+			is_unique: r.is_unique,
+			is_primary: r.is_primary
+		}))
+	};
+}
+
 export interface AnalysisResult {
 	findings: Finding[];
+	rawData: Record<string, Record<string, unknown>[]>;
 	hasPgStatStatements: boolean;
+	databaseContext: DatabaseContext;
 }
 
 export async function runAnalysis(client: pg.Client): Promise<AnalysisResult> {
 	const findings: Finding[] = [];
+	const rawData: Record<string, Record<string, unknown>[]> = {};
 
 	for (const analyzer of alwaysAnalyzers) {
 		try {
-			const results = await analyzer.fn(client);
-			findings.push(...results);
+			const output = await analyzer.fn(client);
+			findings.push(...output.findings);
+			rawData[analyzer.name] = output.rawData;
 		} catch (err) {
 			findings.push({
 				analyzer: analyzer.name,
@@ -63,8 +120,9 @@ export async function runAnalysis(client: pg.Client): Promise<AnalysisResult> {
 	if (hasPgSS) {
 		for (const analyzer of pgStatStatementsAnalyzers) {
 			try {
-				const results = await analyzer.fn(client);
-				findings.push(...results);
+				const output = await analyzer.fn(client);
+				findings.push(...output.findings);
+				rawData[analyzer.name] = output.rawData;
 			} catch (err) {
 				findings.push({
 					analyzer: analyzer.name,
@@ -87,5 +145,7 @@ export async function runAnalysis(client: pg.Client): Promise<AnalysisResult> {
 		});
 	}
 
-	return { findings, hasPgStatStatements: hasPgSS };
+	const databaseContext = await collectDatabaseContext(client);
+
+	return { findings, rawData, hasPgStatStatements: hasPgSS, databaseContext };
 }

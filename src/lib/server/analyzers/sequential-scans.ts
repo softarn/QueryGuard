@@ -44,7 +44,7 @@ const sequentialScans: Analyzer = async (client) => {
 		}
 	}
 
-	return findings;
+	return { findings, rawData: result.rows };
 };
 
 export { sequentialScans };

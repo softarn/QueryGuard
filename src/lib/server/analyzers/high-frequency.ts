@@ -46,7 +46,7 @@ const highFrequency: Analyzer = async (client) => {
 		}
 	}
 
-	return findings;
+	return { findings, rawData: result.rows };
 };
 
 export { highFrequency };

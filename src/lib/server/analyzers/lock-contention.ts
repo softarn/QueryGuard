@@ -89,7 +89,7 @@ const lockContention: Analyzer = async (client) => {
 		});
 	}
 
-	return findings;
+	return { findings, rawData: [...blockedResult.rows, ...longTxResult.rows] };
 };
 
 export { lockContention };

@@ -16,11 +16,11 @@ const unusedIndexes: Analyzer = async (client) => {
 	const days = await daysSinceStatsReset(client);
 
 	if (days == undefined) {
-		return [];
+		return { findings: [], rawData: [] };
 	}
 
 	if (days < 30) {
-		return [];
+		return { findings: [], rawData: [] };
 	}
 
 	const result = await client.query(`
@@ -62,7 +62,7 @@ const unusedIndexes: Analyzer = async (client) => {
 		});
 	}
 
-	return findings;
+	return { findings, rawData: result.rows };
 };
 
 export { unusedIndexes };

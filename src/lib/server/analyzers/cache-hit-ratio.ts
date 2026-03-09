@@ -41,7 +41,7 @@ const cacheHitRatio: Analyzer = async (client) => {
 		}
 	}
 
-	return findings;
+	return { findings, rawData: result.rows };
 };
 
 export { cacheHitRatio };
