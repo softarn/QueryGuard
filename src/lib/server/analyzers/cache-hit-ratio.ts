@@ -1,5 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
+/** Checks the buffer cache hit ratio from `pg_stat_database`. Flags databases reading too much from disk. */
 const cacheHitRatio: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT

@@ -1,5 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
+/** Detects tables with high dead tuple ratios or stale vacuums from `pg_stat_user_tables`. */
 const deadTuples: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT

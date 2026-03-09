@@ -1,5 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
+/** Finds queries with high average execution time from `pg_stat_statements`. Requires the extension. */
 const slowQueries: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT

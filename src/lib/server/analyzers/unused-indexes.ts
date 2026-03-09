@@ -12,6 +12,7 @@ async function daysSinceStatsReset(client: pg.Client): Promise<number | undefine
 	return (Date.now() - new Date(statsReset).getTime()) / (1000 * 60 * 60 * 24);
 }
 
+/** Finds non-primary, non-unique indexes with zero scans. Requires at least 30 days of stats. */
 const unusedIndexes: Analyzer = async (client) => {
 	const days = await daysSinceStatsReset(client);
 

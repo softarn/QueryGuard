@@ -36,6 +36,7 @@ async function hasPgStatStatements(client: pg.Client): Promise<boolean> {
 	}
 }
 
+/** Collects lightweight table/index size and row count metadata from catalog views. */
 async function collectDatabaseContext(client: pg.Client): Promise<DatabaseContext> {
 	const dbSizeResult = await client.query(
 		`SELECT pg_size_pretty(pg_database_size(current_database())) AS size`
@@ -96,6 +97,12 @@ export interface AnalysisResult {
 	databaseContext: DatabaseContext;
 }
 
+/**
+ * Runs all analyzers against the database and collects general database context.
+ *
+ * Analyzers that depend on `pg_stat_statements` are skipped if the extension is not installed.
+ * Individual analyzer failures are caught and reported as info-level findings.
+ */
 export async function runAnalysis(client: pg.Client): Promise<AnalysisResult> {
 	const findings: Finding[] = [];
 	const rawData: Record<string, Record<string, unknown>[]> = {};

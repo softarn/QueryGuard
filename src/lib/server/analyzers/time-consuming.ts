@@ -1,5 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
+/** Finds queries consuming the largest share of total database execution time. Requires `pg_stat_statements`. */
 const timeConsuming: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT

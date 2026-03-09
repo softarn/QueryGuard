@@ -1,5 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
+/** Detects queries currently blocked by locks and long-running transactions that may hold locks. */
 const lockContention: Analyzer = async (client) => {
 	// Find queries currently blocked by locks
 	const blockedResult = await client.query(`

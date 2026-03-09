@@ -1,5 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
+/** Finds queries called very frequently that also consume significant DB time per minute. Requires `pg_stat_statements`. */
 const highFrequency: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT

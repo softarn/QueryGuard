@@ -1,5 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
+/** Finds tables where sequential scans dominate over index scans, suggesting missing indexes. */
 const sequentialScans: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT

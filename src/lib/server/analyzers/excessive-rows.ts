@@ -1,5 +1,6 @@
 import type { Analyzer, Finding } from './types.js';
 
+/** Finds queries returning a large number of rows per call, suggesting missing pagination or filters. Requires `pg_stat_statements`. */
 const excessiveRows: Analyzer = async (client) => {
 	const result = await client.query(`
 		SELECT
