@@ -44,8 +44,7 @@ Set the `QUERYGUARD_MCP_TOKEN` environment variable to the same value as `MCP_AU
 
 | Tool | Description |
 |------|-------------|
-| `analyze_database` | Run all analyzers, returns findings as JSON |
-| `get_findings` | Filter cached findings by severity or analyzer name |
+| `analyze_database` | Run all analyzers, returns findings, raw data, and database context as JSON |
 | `explain_query` | Run `EXPLAIN (FORMAT JSON)` on a query (read-only) |
 
 ### Jules cron
