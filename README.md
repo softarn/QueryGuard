@@ -1,42 +1,66 @@
-# sv
+# QueryGuard
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A Postgres monitoring dashboard that analyzes your database for performance issues — slow queries, missing indexes, sequential scans, dead tuples, and more. Built with SvelteKit and designed to run alongside your existing Postgres on Railway.
 
-## Creating a project
+## Add to your Railway project
 
-If you're seeing this, you've probably already done this step. Congrats!
+1. Push this repo to GitHub
+2. In your Railway project, click **New → GitHub Repo** and select the repo
+3. Add a service variable:
+   ```
+   DATABASE_URL = ${{Postgres.DATABASE_URL}}
+   ```
+   Replace `Postgres` with the name of your Postgres service if it differs.
+4. Add a volume mounted at `/data` (used for QueryGuard's internal SQLite database)
+5. Deploy — QueryGuard will be available on port 3000
+
+## Local development
+
+Start a local Postgres with `pg_stat_statements` enabled:
 
 ```sh
-# create a new project
-npx sv create my-app
+docker compose up -d
 ```
 
-To recreate this project with the same configuration:
+Seed the database with demo data that triggers all analyzers:
 
 ```sh
-# recreate this project
-npx sv@0.12.5 create --template minimal --types ts --no-install .
+docker compose exec -T postgres psql -U queryguard -d queryguard < scripts/seed.sql
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Start the dev server:
 
 ```sh
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Open http://localhost:5173 to see the dashboard.
 
-To create a production version of your app:
+## Security considerations
 
-```sh
-npm run build
-```
+QueryGuard has **no built-in authentication**. Keep the service private to avoid exposing database performance data (query text, table names, schema structure) to unauthorized users.
 
-You can preview the production build with `npm run preview`.
+- **Keep it private on Railway** — Don't generate a public domain for the QueryGuard service. Railway services are private by default and only accessible via internal networking. Use `railway service open` temporarily during development if needed.
+- **Read-only access** — All analyzers only read from `pg_stat_*` views and `pg_stat_statements`. No data is modified in your target database. Suggestions like "DROP INDEX ..." are displayed as text and never executed.
+- **Use a read-only Postgres role** (recommended) — Instead of connecting with the default superuser, create a dedicated role:
+   ```sql
+   CREATE ROLE queryguard_ro LOGIN PASSWORD '...';
+   GRANT CONNECT ON DATABASE yourdb TO queryguard_ro;
+   GRANT USAGE ON SCHEMA public TO queryguard_ro;
+   GRANT SELECT ON ALL TABLES IN SCHEMA public TO queryguard_ro;
+   GRANT pg_read_all_stats TO queryguard_ro;
+   ```
+   Then set `DATABASE_URL` to use this role.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Environment variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `DATABASE_URL` | Postgres connection string (preferred) | — |
+| `PGHOST` | Postgres host (fallback if no `DATABASE_URL`) | `localhost` |
+| `PGPORT` | Postgres port | `5432` |
+| `PGUSER` | Postgres user | `postgres` |
+| `PGPASSWORD` | Postgres password | — |
+| `PGDATABASE` | Postgres database name | `postgres` |
+| `DB_PATH` | Path to QueryGuard's internal SQLite database | `/data/app.db` |
