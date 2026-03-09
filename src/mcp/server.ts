@@ -18,24 +18,34 @@ function createMcpServer() {
 		version: '1.0.0'
 	});
 
-	server.tool('analyze_database', 'Run all QueryGuard analyzers against the connected Postgres database. Returns findings about performance issues like slow queries, missing indexes, dead tuples, and more.', async () => {
-		const client = await connectTarget();
-		try {
-			cachedResult = await runAnalysis(client);
-			return {
-				content: [{ type: 'text', text: JSON.stringify(cachedResult, null, 2) }]
-			};
-		} finally {
-			await client.end();
-		}
-	});
-
-	server.tool(
-		'get_findings',
-		'Filter cached findings from the last analyze_database run by severity and/or analyzer name.',
+	server.registerTool(
+		'analyze_database',
 		{
-			severity: z.enum(['critical', 'warning', 'info']).optional().describe('Filter by severity level'),
-			analyzer: z.string().optional().describe('Filter by analyzer name (e.g. "slow-queries", "dead-tuples")')
+			description: 'Run all QueryGuard analyzers against the connected Postgres database. Returns findings about performance issues like slow queries, missing indexes, dead tuples, and more.',
+			annotations: { readOnlyHint: true }
+		},
+		async () => {
+			const client = await connectTarget();
+			try {
+				cachedResult = await runAnalysis(client);
+				return {
+					content: [{ type: 'text', text: JSON.stringify(cachedResult, null, 2) }]
+				};
+			} finally {
+				await client.end();
+			}
+		}
+	);
+
+	server.registerTool(
+		'get_findings',
+		{
+			description: 'Filter cached findings from the last analyze_database run by severity and/or analyzer name.',
+			inputSchema: {
+				severity: z.enum(['critical', 'warning', 'info']).optional().describe('Filter by severity level'),
+				analyzer: z.string().optional().describe('Filter by analyzer name (e.g. "slow-queries", "dead-tuples")')
+			},
+			annotations: { readOnlyHint: true }
 		},
 		async ({ severity, analyzer }) => {
 			if (!cachedResult) {
@@ -58,11 +68,14 @@ function createMcpServer() {
 		}
 	);
 
-	server.tool(
+	server.registerTool(
 		'explain_query',
-		'Run EXPLAIN (FORMAT JSON) on a SQL query to show the execution plan. Read-only — the query is not executed.',
 		{
-			query: z.string().describe('The SQL query to explain')
+			description: 'Run EXPLAIN (FORMAT JSON) on a SQL query to show the execution plan. Read-only — the query is not executed.',
+			inputSchema: {
+				query: z.string().describe('The SQL query to explain')
+			},
+			annotations: { readOnlyHint: true }
 		},
 		async ({ query }) => {
 			const client = await connectTarget();
