@@ -101,7 +101,7 @@ export interface AnalysisResult {
  * Runs all analyzers against the database and collects general database context.
  *
  * Analyzers that depend on `pg_stat_statements` are skipped if the extension is not installed.
- * Individual analyzer failures are caught and reported as info-level findings.
+ * Individual analyzer failures are caught and logged to stderr.
  */
 export async function runAnalysis(client: pg.Client): Promise<AnalysisResult> {
 	const findings: Finding[] = [];
@@ -113,13 +113,7 @@ export async function runAnalysis(client: pg.Client): Promise<AnalysisResult> {
 			findings.push(...output.findings);
 			rawData[analyzer.name] = output.rawData;
 		} catch (err) {
-			findings.push({
-				analyzer: analyzer.name,
-				severity: 'info',
-				title: `Analyzer "${analyzer.name}" failed`,
-				description: `Error running analyzer: ${err instanceof Error ? err.message : String(err)}`,
-				metadata: { error: true }
-			});
+			console.error(`Analyzer "${analyzer.name}" failed:`, err);
 		}
 	}
 
@@ -131,13 +125,7 @@ export async function runAnalysis(client: pg.Client): Promise<AnalysisResult> {
 				findings.push(...output.findings);
 				rawData[analyzer.name] = output.rawData;
 			} catch (err) {
-				findings.push({
-					analyzer: analyzer.name,
-					severity: 'info',
-					title: `Analyzer "${analyzer.name}" failed`,
-					description: `Error running analyzer: ${err instanceof Error ? err.message : String(err)}`,
-					metadata: { error: true }
-				});
+				console.error(`Analyzer "${analyzer.name}" failed:`, err);
 			}
 		}
 	} else {
