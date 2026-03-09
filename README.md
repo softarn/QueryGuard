@@ -4,6 +4,8 @@ Postgres performance analyzer — detects slow queries, missing indexes, sequent
 
 ## Deploy to Railway
 
+Both services share this repo. Configure each one separately in the Railway UI.
+
 ### MCP Server
 
 ```
@@ -11,14 +13,16 @@ Claude Code ──HTTP──▶ MCP server (Railway) ──private network──
 ```
 
 1. In your Railway project, click **New → GitHub Repo** and select this repo
-2. Add service variables:
+2. Under **Settings → Build**, select **Dockerfile** as the builder
+3. Add service variables:
    ```
    DATABASE_URL = ${{Postgres.DATABASE_URL}}
    MCP_AUTH_TOKEN = <generate a secret token>
    PORT = 3001
    ```
-3. Generate a public domain for the service (the MCP endpoint needs to be reachable by Claude Code)
-4. Deploy
+4. Under **Settings → Deploy**, set healthcheck path to `/health`
+5. Under **Settings → Networking**, generate a public domain (the MCP endpoint needs to be reachable by Claude Code)
+6. Deploy
 
 #### Configure Claude Code
 
@@ -57,15 +61,16 @@ Railway cron ──runs──▶ cron.ts ──analyze──▶ Postgres
 ```
 
 1. In your Railway project, click **New → GitHub Repo** and select this repo
-2. Under **Settings → Deploy**, set the start command to `npx tsx src/jules/cron.ts`
-3. Under **Settings → Cron**, set a schedule (e.g. `0 8 * * *` for daily at 8 AM UTC)
-4. Add service variables:
+2. Under **Settings → Build**, select **Nixpacks** as the builder (not Dockerfile)
+3. Under **Settings → Deploy**, set the start command to `npx tsx src/jules/cron.ts`
+4. Under **Settings → Cron**, set a schedule (e.g. `0 8 * * *` for daily at 8 AM UTC)
+5. Add service variables:
    ```
    DATABASE_URL = ${{Postgres.DATABASE_URL}}
    JULES_API_KEY = <your Jules API key from jules.google.com settings>
    JULES_REPO_NAME = <GitHub repo name, e.g. "my-repo">
    ```
-5. Deploy
+6. Deploy
 
 ## Local development
 
