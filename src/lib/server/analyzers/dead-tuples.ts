@@ -15,7 +15,7 @@ const deadTuples: Analyzer = async (client) => {
 			last_autovacuum,
 			last_vacuum
 		FROM pg_stat_user_tables
-		WHERE n_live_tup > 0
+		WHERE n_live_tup > 1000
 		ORDER BY n_dead_tup DESC
 	`);
 

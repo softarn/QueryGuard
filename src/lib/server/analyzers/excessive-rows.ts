@@ -10,7 +10,7 @@ const excessiveRows: Analyzer = async (client) => {
 			CASE WHEN calls > 0 THEN rows::numeric / calls ELSE 0 END AS rows_per_call,
 			mean_exec_time
 		FROM pg_stat_statements
-		WHERE calls > 0
+		WHERE calls > 5
 			AND rows > 0
 			AND query NOT LIKE '%pg_stat%'
 		ORDER BY rows::numeric / calls DESC

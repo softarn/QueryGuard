@@ -11,7 +11,8 @@ const timeConsuming: Analyzer = async (client) => {
 			rows,
 			(total_exec_time / sum(total_exec_time) OVER () * 100) AS pct_total_time
 		FROM pg_stat_statements
-		WHERE calls > 0
+		WHERE calls > 5
+			AND total_exec_time > 1000
 			AND query NOT LIKE '%pg_stat%'
 		ORDER BY total_exec_time DESC
 		LIMIT 20

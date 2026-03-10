@@ -19,6 +19,9 @@ const cacheHitRatio: Analyzer = async (client) => {
 
 	for (const row of result.rows) {
 		const ratio = parseFloat(row.hit_ratio);
+		const totalBlocks = parseInt(row.blks_hit) + parseInt(row.blks_read);
+		if (totalBlocks < 10000) continue;
+
 		if (ratio < 90) {
 			findings.push({
 				analyzer: 'cache-hit-ratio',

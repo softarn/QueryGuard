@@ -11,7 +11,7 @@ const slowQueries: Analyzer = async (client) => {
 			total_exec_time,
 			rows
 		FROM pg_stat_statements
-		WHERE calls > 0
+		WHERE calls > 5
 			AND query NOT LIKE '%pg_stat%'
 		ORDER BY mean_exec_time DESC
 		LIMIT 20
